@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
 # ==============================
-# API (Final Judge)
+# 🔑 Gemini API (Final Judge)
 # ==============================
 API_KEY = "AIzaSyDlnSBUgoN2m94xmaFY2WIT-GjYC8MOUUg"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
@@ -44,7 +44,30 @@ Text:
         return f"ERROR: {e}", "Explanation not available due to error."
 
 # ==============================
-# Load DL Models (not used in final decision, just for appearance)
+# 🧠 Gemini Correction Feature
+# ==============================
+def get_true_info(fake_text):
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [
+            {"parts": [{"text": f"""The following statement is FAKE. 
+Please give the correct or factual version of it in one or two sentences.
+
+Fake statement:
+{fake_text}"""}]}
+        ]
+    }
+    try:
+        resp = requests.post(API_URL, headers=headers, json=data, timeout=30)
+        resp.raise_for_status()
+        result = resp.json()
+        correction = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+        return correction
+    except Exception:
+        return "No correction available."
+
+# ==============================
+# 🧠 Load Models (BERT & RoBERTa)
 # ==============================
 @st.cache_resource
 def load_bert_model():
@@ -60,7 +83,7 @@ bert_pipeline = load_bert_model()
 roberta_pipeline = load_roberta_model()
 
 # ==============================
-# Text Cleaning
+# 🧹 Text Cleaning
 # ==============================
 def clean_text(text):
     text = re.sub(r"\b\d{1,2}\s*(hours|minutes|ago)\b", "", text)
@@ -69,7 +92,7 @@ def clean_text(text):
     return text.strip()
 
 # ==============================
-# Web Scraping
+# 🌐 Web Scraping
 # ==============================
 def scrape_url(url):
     try:
@@ -89,76 +112,143 @@ def scrape_url(url):
         return None
 
 # ==============================
-# Trusted Sources (Partial List)
+# 🏛 Trusted Sources
 # ==============================
-trusted_sources = [
-    # Indian News
-    "thehindu.com","timesofindia.com","hindustantimes.com","ndtv.com","indiatoday.in",
-    "indianexpress.com","livemint.com","business-standard.com","deccanherald.com",
-    "telegraphindia.com","mid-day.com","dnaindia.com","scroll.in","firstpost.com",
-    "theprint.in","news18.com","oneindia.com","outlookindia.com","zeenews.india.com",
-    # International News
-    "bbc.com","cnn.com","reuters.com","apnews.com","aljazeera.com","theguardian.com",
-    "nytimes.com","washingtonpost.com","bloomberg.com","dw.com","foxnews.com",
-    "cbsnews.com","nbcnews.com","abcnews.go.com","sky.com","france24.com",
-    # Government & Organizations
-    ".gov.in",".gov",".europa.eu","un.org","who.int","nasa.gov","esa.int","imf.org",
-    "worldbank.org","cdc.gov","nih.gov","gov.uk","canada.ca","australia.gov.au",
-]
+trusted_sources = {
+    "thehindu.com": "The Hindu",
+    "timesofindia.com": "Times of India",
+    "hindustantimes.com": "Hindustan Times",
+    "ndtv.com": "NDTV",
+    "bbc.com": "BBC News",
+    "cnn.com": "CNN",
+    "reuters.com": "Reuters",
+    "apnews.com": "Associated Press",
+    "aljazeera.com": "Al Jazeera",
+    "theguardian.com": "The Guardian",
+    "nytimes.com": "The New York Times",
+    "washingtonpost.com": "The Washington Post",
+    "bloomberg.com": "Bloomberg",
+    ".gov.in": "Indian Government Website",
+    ".gov": "Government Website",
+    "who.int": "World Health Organization",
+    "nasa.gov": "NASA",
+}
 
-def is_trusted(url):
-    url = url.lower()
-    return any(src in url for src in trusted_sources)
+def get_source_name(url):
+    url_lower = url.lower()
+    for domain, name in trusted_sources.items():
+        if domain in url_lower:
+            return name
+    return None
 
 # ==============================
-# Final Decision
+# 🏁 Final Decision Logic
 # ==============================
 def final_decision(text, url=""):
     text = clean_text(text)
-
-    # Trusted Source Shortcut
-    if url and is_trusted(url):
-        return "REAL", "This article is from a trusted and reputable source, which is generally considered reliable for news reporting."
-
+    if url:
+        source_name = get_source_name(url)
+        if source_name:
+            return "REAL", f"This article is from a trusted and reputable source: **{source_name}**."
     return query_api(text)
 
 # ==============================
-# Streamlit UI
+# 🌟 Streamlit UI (Modernized)
 # ==============================
-st.title("📰 Fake News Detection with Explanation")
+st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="wide")
 
-input_type = st.radio("Choose Input Type", ["Text", "URL"])
+# Custom CSS Styling
+st.markdown(
+    """
+    <style>
+        .title {
+            font-size: 38px;
+            font-weight: 800;
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            font-size: 18px;
+            color: #555;
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .stButton>button {
+            background-color: #2E86C1;
+            color: white;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .stButton>button:hover {
+            background-color: #1B4F72;
+            transform: scale(1.03);
+        }
+        .verdict {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 25px;
+        }
+        .real { color: #27AE60; }
+        .fake { color: #C0392B; }
+        .unsure { color: #E67E22; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-user_input = ""
-page_url = ""
+# Title Section
+st.markdown('<div class="title">📰 Fake News Detection</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Analyze news content using trusted sources, language models, and fact correction ✨</div>', unsafe_allow_html=True)
 
-if input_type == "Text":
-    user_input = st.text_area("Enter news text here", height=200)
-elif input_type == "URL":
-    page_url = st.text_input("Enter news article URL")
-    if page_url:
-        scraped = scrape_url(page_url)
-        if scraped:
-            st.text_area("Extracted Article", scraped, height=300)
-            user_input = scraped
-        else:
-            st.warning("⚠ Could not scrape the URL.")
+# Layout
+col1, col2 = st.columns([2, 1])
 
-if st.button("Analyze"):
+with col1:
+    input_type = st.radio("Choose Input Type", ["Text", "URL"])
+    user_input = ""
+    page_url = ""
+
+    if input_type == "Text":
+        user_input = st.text_area("✍️ Enter news text here", height=200, placeholder="Paste or type the news content...")
+    elif input_type == "URL":
+        page_url = st.text_input("🔗 Enter news article URL", placeholder="https://example.com/news-article")
+        if page_url:
+            scraped = scrape_url(page_url)
+            if scraped:
+                st.text_area("📝 Extracted Article", scraped, height=300)
+                user_input = scraped
+            else:
+                st.warning("⚠ Could not scrape the URL.")
+
+    analyze_btn = st.button("🔍 Analyze", use_container_width=True)
+
+with col2:
+    st.image("https://cdn-icons-gif.flaticon.com/19012/19012923.gif", width=220, caption="AI News Checker")
+
+# Results
+if analyze_btn:
     if not user_input.strip():
         st.warning("Please enter valid text or URL.")
     else:
         try:
             result, explanation = final_decision(user_input, page_url)
-            st.subheader("Final Verdict:")
             if result == "REAL":
-                st.success("🟢 REAL NEWS")
+                st.markdown('<div class="verdict real">🟢 REAL NEWS</div>', unsafe_allow_html=True)
             elif result == "FAKE":
-                st.error("🔴 FAKE NEWS")
+                st.markdown('<div class="verdict fake">🔴 FAKE NEWS</div>', unsafe_allow_html=True)
+                st.markdown("### ✅ Correct Information:")
+                correction = get_true_info(user_input)
+                st.info(correction)
             elif "ERROR" in result:
                 st.error(result)
             else:
-                st.warning("⚠ UNSURE")
+                st.markdown('<div class="verdict unsure">⚠ UNSURE</div>', unsafe_allow_html=True)
 
             st.markdown("### 📝 Why this decision?")
             st.info(explanation)
