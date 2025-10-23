@@ -4,9 +4,6 @@ import re
 from bs4 import BeautifulSoup
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
-# ==============================
-# 🔑 Gemini API (Final Judge)
-# ==============================
 API_KEY = "AIzaSyDlnSBUgoN2m94xmaFY2WIT-GjYC8MOUUg"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
@@ -43,9 +40,6 @@ Text:
     except Exception as e:
         return f"ERROR: {e}", "Explanation not available due to error."
 
-# ==============================
-# 🧠 Gemini Correction Feature
-# ==============================
 def get_true_info(fake_text):
     headers = {"Content-Type": "application/json"}
     data = {
@@ -66,9 +60,7 @@ Fake statement:
     except Exception:
         return "No correction available."
 
-# ==============================
-# 🧠 Load Models (BERT & RoBERTa)
-# ==============================
+
 @st.cache_resource
 def load_bert_model():
     model = AutoModelForSequenceClassification.from_pretrained("omykhailiv/bert-fake-news-recognition")
@@ -82,18 +74,14 @@ def load_roberta_model():
 bert_pipeline = load_bert_model()
 roberta_pipeline = load_roberta_model()
 
-# ==============================
-# 🧹 Text Cleaning
-# ==============================
+
 def clean_text(text):
     text = re.sub(r"\b\d{1,2}\s*(hours|minutes|ago)\b", "", text)
     text = re.sub(r"(share|save|click here|more details|read more)", "", text, flags=re.I)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
-# ==============================
-# 🌐 Web Scraping
-# ==============================
+
 def scrape_url(url):
     try:
         res = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
@@ -111,9 +99,6 @@ def scrape_url(url):
     except:
         return None
 
-# ==============================
-# 🏛 Trusted Sources
-# ==============================
 trusted_sources = {
     "thehindu.com": "The Hindu",
     "timesofindia.com": "Times of India",
@@ -141,9 +126,7 @@ def get_source_name(url):
             return name
     return None
 
-# ==============================
-# 🏁 Final Decision Logic
-# ==============================
+
 def final_decision(text, url=""):
     text = clean_text(text)
     if url:
@@ -152,9 +135,7 @@ def final_decision(text, url=""):
             return "REAL", f"This article is from a trusted and reputable source: **{source_name}**."
     return query_api(text)
 
-# ==============================
-# 🌟 Streamlit UI (Modernized)
-# ==============================
+
 st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="wide")
 
 # Custom CSS Styling
@@ -202,7 +183,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Title Section
+
 st.markdown("""
     <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
         <img src="https://cdn-icons-png.flaticon.com/128/18788/18788954.png" width="50">
@@ -212,7 +193,7 @@ st.markdown("""
 
 st.markdown('<div class="subtitle">Analyze news content using trusted sources, language models, and fact correction ✨</div>', unsafe_allow_html=True)
 
-# Layout
+
 col1, col2 = st.columns([2, 1])
 
 with col1:
@@ -237,7 +218,7 @@ with col1:
 with col2:
     st.image("https://cdn-icons-gif.flaticon.com/19012/19012923.gif", width=220, caption="AI News Checker")
 
-# Results
+
 if analyze_btn:
     if not user_input.strip():
         st.warning("Please enter valid text or URL.")
