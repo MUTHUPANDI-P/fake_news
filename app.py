@@ -136,7 +136,7 @@ def final_decision(text, url=""):
     return query_api(text)
 
 
-st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="wide")
+st.set_page_config(page_title="Fake News Detection App", page_icon="📰", layout="wide")
 
 # Custom CSS Styling
 st.markdown(
@@ -191,7 +191,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="subtitle">Analyze news content using trusted sources, language models, and fact correction ✨</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle"></div>', unsafe_allow_html=True)
 
 
 col1, col2 = st.columns([2, 1])
@@ -202,21 +202,18 @@ with col1:
     page_url = ""
 
     if input_type == "Text":
-        user_input = st.text_area("✍️ Enter news text here", height=200, placeholder="Paste or type the news content...")
+        user_input = st.text_area("Enter news text here", height=200, placeholder="Paste or type the news content...")
     elif input_type == "URL":
-        page_url = st.text_input("🔗 Enter news article URL", placeholder="https://example.com/news-article")
+        page_url = st.text_input("Enter news article URL", placeholder="https://example.com/news-article")
         if page_url:
             scraped = scrape_url(page_url)
             if scraped:
-                st.text_area("📝 Extracted Article", scraped, height=300)
+                st.text_area("Extracted Article", scraped, height=300)
                 user_input = scraped
             else:
-                st.warning("⚠ Could not scrape the URL.")
+                st.warning("Could not scrape the URL.")
 
-    analyze_btn = st.button("🔍 Analyze", use_container_width=True)
-
-with col2:
-    st.image("https://cdn-icons-gif.flaticon.com/19012/19012923.gif", width=220, caption="AI News Checker")
+    analyze_btn = st.button("Analyze", use_container_width=True)
 
 
 if analyze_btn:
